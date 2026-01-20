@@ -1,28 +1,58 @@
 import axios from "axios";
-import type { Movie } from "../types/movie";
+import type { AxiosResponse } from "axios";
+import type { Note } from "../types/note";
 
-const BASE_URL = "https://api.themoviedb.org/3";
-const TOKEN = import.meta.env.VITE_TMDB_TOKEN;
+const BASE_URL = "https://notehub-public.goit.study/api";
 
-export interface FetchMoviesResponse {
-  results: Movie[];
-  total_pages: number;
+const api = axios.create({
+  baseURL: BASE_URL,
+});
+
+api.interceptors.request.use((config) => {
+  const token = import.meta.env.VITE_NOTEHUB_TOKEN;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+export interface FetchNotesParams {
   page: number;
+  perPage: number;
+  search?: string;
 }
 
-export async function fetchMovies(
-  query: string,
-  page = 1,
-): Promise<FetchMoviesResponse> {
-  const response = await axios.get<FetchMoviesResponse>(
-    `${BASE_URL}/search/movie`,
-    {
-      params: { query, page },
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-      },
-    },
-  );
+export interface FetchNotesResponse {
+  notes: Note[];
+  totalPages: number;
+}
+
+export interface CreateNotePayload {
+  title: string;
+  content: string;
+  tag: Note["tag"];
+}
+
+export const fetchNotes = async (
+  params: FetchNotesParams,
+): Promise<FetchNotesResponse> => {
+  const response: AxiosResponse<FetchNotesResponse> = await api.get("/notes", {
+    params,
+  });
 
   return response.data;
-}
+};
+
+export const createNote = async (payload: CreateNotePayload): Promise<Note> => {
+  const response: AxiosResponse<Note> = await api.post("/notes", payload);
+
+  return response.data;
+};
+
+export const deleteNote = async (id: string): Promise<Note> => {
+  const response: AxiosResponse<Note> = await api.delete(`/notes/${id}`);
+
+  return response.data;
+};
